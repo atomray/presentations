@@ -7,7 +7,7 @@
     <title>DSLs - Domain Specific Languages Part I: Introduction</title>
 
     <meta name="description" content="This presentation contains a brief introduction to the concepts behind domain specific languages" />
-    <meta name="author" content="Bartek Szopka" />
+    <meta name="author" content="Adam Ramadan" />
 
     <link href="http://fonts.googleapis.com/css?family=Open+Sans:regular,semibold,italic,italicsemibold|PT+Sans:400,700,400italic,700italic|PT+Serif:400,700,400italic,700italic" rel="stylesheet" />
 
@@ -26,15 +26,241 @@
 <div id="impress">
 
 <!-- slides -->
-<div id="bored" class="step slide" data-x="-1000" data-y="-1500">
-  <h1>Domain Specific Languages</h1>
-  <h3>19 March 2014</h3>
-  <h3>Pete Gyatt and Adam Ramadan</h3>
-</div>
 <div class="step slide" data-x="0" data-y="-1500">
-  <h2>Part I: Introduction and Overview</h2>
+  <h1>Domain Specific Languages</h1>
+  <h2>19 March 2014</h2>
+  <h2>Pete Gyatt and Adam Ramadan</h2>
+  <hr/>
 </div>
+<div class="step slide" data-x="0" data-y="0">
+  <h1>Part I: Introduction and Overview</h1>
+  <hr/>
+  <q class="spring-int">
+    A domain-specific language (DSL) is a computer language specialized to a particular application domain. This is in contrast to a general-purpose language (GPL), which is broadly applicable across domains, and lacks specialized features for a particular domain.
+  </q>
+</div>
+<div class="step slide" data-x="1500" data-y="0">
+  <h1>Part I: Introduction and Overview</h1>
+  <hr/>
+  <h2>Internal DSLs</h2>
+  <br/>
+  <ul>
+    <li>implemented in a general purpose programming language</li>
+    <li>may be compiled or interpreted</li>
+  </ul>
+  <br/><br/>
+  <h2>External DSLs</h2>
+  <br/>
+  <ul>
+    <li>parsed and acted upon</li>
+    <li>may define grammars or schemas for verification</li>
+  </ul>
+</div>
+<div class="step slide" data-x="0" data-y="1500">
+  <h1>Use Case: Configuration I: Spring Integration</h1>
+  <hr/>
+  <q class="spring-int">
+    "Extends the Spring programming model to support the well-known Enterprise
+    Integration Patterns. Spring Integration enables lightweight messaging
+    within Spring-based applications and supports integration with external
+    systems via declarative adapters. Those adapters provide a higher-level of
+    abstraction over Spring's support for remoting, messaging, and scheduling.
+    Spring Integration's primary goal is to provide a simple model for building
+    enterprise integration solutions while maintaining the separation of
+    concerns that is essential for producing maintainable, testable code."
+  </q>
+</div>
+<div class="step slide" data-x="1500" data-y="1500">
+  <h1>Use Case: Configuration I: Spring Integration</h1>
+  <h2>XML Configuration</h2>
+  <hr/>
+  <code class="code">
+    &lt;int:gateway service-interface="foo.bar.MyGateway"
+          default-request-channel="inChannel"/&gt;
+    &lt;int:filter input-channel="inChannel"
+          expression="payload.equals('World')"
+          output-channel="transformingChannel"/&gt;
+    &lt;int:transformer input-channel="transformingChannel"
+          expression="'Hello ' + payload"
+          output-channel="loggingChannel"/&gt;
+    &lt;int:service-activator input-channel="loggingChannel"
+          expression="T(java.lang.System).out.println(payload)"/&gt;
+  </code>
+  <ul><li>Can validate the structure but not the content</li></ul>
+</div>
+<div class="step slide" data-x="3000" data-y="1500">
+  <h1>Use Case: Configuration I: Spring Integration</h1>
+  <h2>Scala</h2>
+  <hr/>
+  <code class="code">
+    val messageFlow =
+         filter { payload: String => payload == "World" } -->
+         transform { payload: String => "Hello " + payload } -->
+         handle { payload: String => println(payload) }
 
+    messageFlow.send("World")
+  </code>
+  <ul><li>Validated by the compiler both for references and types</li></ul>
+</div>
+<div class="step slide" data-x="0" data-y="3000">
+  <h1>Use Case: Configuration II</h1>
+  <h2>Experimental Automerge Configuration at FCC</h2>
+  <h2>ANTLR</h2>
+  <hr>
+  <q class="spring-int">
+    ANTLR (ANother Tool for Language Recognition) is a powerful parser generator for reading, processing, executing, or translating structured text or binary files. It's widely used to build languages, tools, and frameworks. From a grammar, ANTLR generates a parser that can build and walk parse trees.
+  </q>
+</div>
+<div class="step slide" data-x="1500" data-y="3000">
+  <h1>Use Case: Configuration II</h1>
+  <h2>Experimental Automerge Configuration at FCC</h2>
+  <hr/>
+  <code class="code">
+grammar AutomergeConfiguration;
+
+config: (merges | branches | reviewers)+;
+merges: 'merges {' merge* '}';
+merge: branchName ('{' merge+ '}')?;
+...
+branchName: ID;
+username: ID;
+...
+ID: [A-Za-z][A-zA-Z0-9-_]*;
+NUMBER: DIGIT+;
+fragment DIGIT: [0-9];
+  </code>
+</div>
+<div class="step slide" data-x="3000" data-y="3000">
+  <h1>Use Case: Configuration II</h1>
+  <h2>Experimental Automerge Configuration at FCC</h2>
+  <hr/>
+  <code class="code">
+public final class Configuration {
+
+	private final Set&lt;ReviewerGroup&gt; reviewerGroups;
+	private final Set&lt;Branch&gt; branches;
+	private final Set&lt;Merge&gt; merges;
+...
+	public static final class Branch {
+		private final String name;
+		private final Map&lt;String, String> properties = new LinkedHashMap();
+  </code>
+</div>
+<div class="step slide" data-x="4500" data-y="3000">
+  <h1>Use Case: Configuration II</h1>
+  <h2>Experimental Automerge Configuration at FCC</h2>
+  <hr/>
+  <code class="code">
+class ConfigurationBuilder {
+	private final Set&lt;Merge&gt; merges = new LinkedHashSet();
+	private final Map&lt;String, Branch&gt; branches = new LinkedHashMap();
+	private final Map&lt;String, ReviewerGroup&gt; reviewerGroups = new LinkedHashMap();
+
+	public Configuration build() {
+		return new Configuration(merges, branches.values(), reviewerGroups.values());
+	}
+
+	public BranchConfigurationBuilder branch(String name) {
+		return new BranchConfigurationBuilder(getBranch(name));
+	}
+</code>
+</div>
+<div class="step slide" data-x="0" data-y="6000">
+  <h1>Use Case: Executable Specifications I: Cucumber (Ruby)</h1>
+  <hr/>
+  <code class="code">
+  Feature: Search courses
+  Courses should be searchable by topic
+  Search results should provide the course code
+
+  Scenario: Search by topic
+    Given there are 240 courses which do not have the topic "biology"
+    And there are 2 courses A001, B205 that each have "biology" as one of the topics
+    When I search for "biology"
+    Then I should see the following courses:
+      | Course code |
+      | A001        |
+      | B205        |
+  </code>
+</div>
+<div class="step slide" data-x="1500" data-y="6000">
+  <h1>Use Case: Executable Specifications II: Geb (Groovy)</h1>
+  <hr/>
+  <code class="code">
+	given: "I am at the fee calculation page"
+	to RateCalculatorPage
+
+	when:
+	criteria.bodyType = "Truck"
+	criteria.vehicleMake = "DODGE"
+	criteria.vehicleModel = "RAM 2500 QUAD CAB 4WD DIESEL"
+	criteria.year = "2009"
+	criteria.registrationClass = "LV - Light Vehicle"
+	criteria.submit()
+
+	then: "Verify rate"
+	result.rate == "1579"
+  </code>
+</div>
+<div class="step slide" data-x="3000" data-y="6000">
+  <h1>Use Case: Executable Specifications III: ScalaTest</h1>
+  <hr/>
+  <code class="code">
+  "A Stack" should "pop values in last-in-first-out order" in {
+    val stack = new Stack[Int]
+    stack.push(1)
+    stack.push(2)
+    stack.pop() should be (2)
+    stack.pop() should be (1)
+  }
+
+  it should "throw NoSuchElementException if an empty stack is popped" in {
+    val emptyStack = new Stack[Int]
+    a [NoSuchElementException] should be thrownBy {
+      emptyStack.pop()
+    }
+  }
+  </code>
+</div>
+<div class="step slide" data-x="0" data-y="7500">
+  <h1>Use Case: Business Logic</h1>
+  <h2>SGI - International Registration Program</h2>
+  <hr/>
+  <p>Fluent interface - a DSL without the syntactic sugar</p>
+  <code class="code">
+    applyRate(List&lt;Long&gt; productIds, final BigDecimal amount)
+    addToFee(List&lt;Long&gt; productIds, final BigDecimal amount)
+    applyMinimum(List&lt;Long&gt; productIds, final BigDecimal amount)
+    prorateDaily(List&lt;Long&gt; productIds)
+    prorateMonthly(List&lt;Long&gt; productIds)
+    prorateMonthlyDivideFirst(List&lt;Long&gt; productIds)
+    roundToNearestDollar(List&lt;Long&gt; productIds)
+    setRoundingToNearestDollar()
+    setRoundingToQuebecRules()
+  </code>
+</div>
+<div class="step slide" data-x="1500" data-y="7500">
+  <h1>Use Case: Business Logic</h1>
+  <hr/>
+  <code class="code">
+   @Override
+   public void rate() throws SGIValidationException {
+      setMandatory( GVW );
+      setMandatory( PURCHASE_PRICE_CDN );
+      setMandatory( PURCHASE_DATE );
+      setMandatory( CD_VEHICLE_IRP_VEHICLE_TYPE_ID );
+
+      calculateYearsSincePurchase();
+      applyRate( Arrays.asList( ProductIds.Prorated_Vehicle_Tax ), getPurchasePrice() );
+      prorateDaily( Arrays.asList( ProductIds.Registration.Base_Reg_Fee ) );
+      prorateMonthly( Arrays.asList( ProductIds.Registration.Prorated_Vehicle_Tax ) );
+   }
+  </code>
+</div>
+<div class="step slide" data-x="0" data-y="9000">
+  <h1>Case Study: HIAL</h1>
+  <hr/>
+</div>
 
 <!-- end of slides -->
 </div>
